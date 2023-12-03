@@ -26,17 +26,29 @@ fn handle_connections(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
     init_response();
-    let content = std::fs::read_to_string("index.html").unwrap();
 
-    let response = format!(
-        "HTTP/1.1 200 OK\r\n\rContent-Length: {}\r\n\r\n{}",
-        content.len(),
-        content
-    );
+    let request_line = buffer.lines().next().unwrap().unwrap();
+    println!("request_line = {}", request_line);
 
-    stream.write(response.as_bytes()).unwrap();
+    if request_line == "GET / HTTP/1.1" {
+        let response_status = "HTTP/1.1 200 OK";
+        let content = std::fs::read_to_string("index.html").unwrap();
+
+        let response = format!(
+           "{}\r\n\rContent-Length: {}\r\n\r\n{}",
+            response_status,
+            content.len(),
+            content
+        );
+        stream.write(response.as_bytes()).unwrap();
+    } else {
+        let response = "test".to_owned();
+        stream.write(response.as_bytes()).unwrap();
+    }
+   
     stream.flush().unwrap();
     println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
+   
 }
 
 fn init_response() {
