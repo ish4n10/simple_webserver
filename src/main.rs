@@ -1,7 +1,8 @@
 use std::{
-    io::{prelude::*, BufReader},
-    net::{TcpListener, TcpStream}, fs::{OpenOptions, File},
+    io::prelude::*,
+    net::{TcpListener, TcpStream}, fs::OpenOptions,
 };
+use simple_web_server::ThreadPool;
 
 fn main() {
 
@@ -12,11 +13,14 @@ fn main() {
     
     let listener = 
         TcpListener::bind(endpoint).unwrap();
-
+    let pool = ThreadPool::new(4);
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        println!("Connection established");
-        handle_connections(stream);
+
+        // println!("Connection established");
+        pool.execute(|| {
+            handle_connections(stream);
+        });
     }
     println!("Hello, world!");
 }
@@ -29,7 +33,7 @@ fn handle_connections(mut stream: TcpStream) {
     let request_line = buffer.lines().next().unwrap().unwrap();
     println!("request_line = {}", request_line);
 
-    let (response_status, filename) = if request_line == "GET / HTTP1.1" {
+    let (response_status, filename) = if request_line == "GET / HTTP/1.1" {
         ("HTTP/1.1 200 OK", "index.html")
     } else {
         ("HTTP/1.1 404 NOT FOUND", "404.html")
@@ -37,7 +41,7 @@ fn handle_connections(mut stream: TcpStream) {
     let content = std::fs::read_to_string(filename).unwrap();
 
     let response = format!(
-        "{}\r\n\rContent-Length: {}\r\n\r\n{}",
+        "{}\r\nContent-Length: {}\r\n\r\n{}",
          response_status,
          content.len(),
          content
