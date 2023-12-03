@@ -42,7 +42,15 @@ fn handle_connections(mut stream: TcpStream) {
         );
         stream.write(response.as_bytes()).unwrap();
     } else {
-        let response = "test".to_owned();
+        let response_status = "HTTP/1.1 404 NOT FOUND";
+        let content = std::fs::read_to_string("404.html").unwrap();
+        
+        let response = format!(
+            "{}\r\n\rContent-Length: {}\r\n\r\n{}",
+            response_status,
+            content.len(),
+            content
+        );
         stream.write(response.as_bytes()).unwrap();
     }
    
@@ -58,5 +66,14 @@ fn init_response() {
                         .create(true)
                         .open("index.html").unwrap();
     file.write(b"<html><head>THIS IS A RESPONSE</head></html>").unwrap();
+
+
+    file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open("404.html").unwrap();
+
+    file.write(b"<html><body><center>404 not found lol</center></body></html>").unwrap();
 
 }
