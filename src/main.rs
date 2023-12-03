@@ -3,7 +3,6 @@ use std::{
     net::{TcpListener, TcpStream}, fs::{OpenOptions, File},
 };
 
-
 fn main() {
 
     const HOST: &str = "127.0.0.1";
@@ -30,30 +29,20 @@ fn handle_connections(mut stream: TcpStream) {
     let request_line = buffer.lines().next().unwrap().unwrap();
     println!("request_line = {}", request_line);
 
-    if request_line == "GET / HTTP/1.1" {
-        let response_status = "HTTP/1.1 200 OK";
-        let content = std::fs::read_to_string("index.html").unwrap();
-
-        let response = format!(
-           "{}\r\n\rContent-Length: {}\r\n\r\n{}",
-            response_status,
-            content.len(),
-            content
-        );
-        stream.write(response.as_bytes()).unwrap();
+    let (response_status, filename) = if request_line == "GET / HTTP1.1" {
+        ("HTTP/1.1 200 OK", "index.html")
     } else {
-        let response_status = "HTTP/1.1 404 NOT FOUND";
-        let content = std::fs::read_to_string("404.html").unwrap();
-        
-        let response = format!(
-            "{}\r\n\rContent-Length: {}\r\n\r\n{}",
-            response_status,
-            content.len(),
-            content
-        );
-        stream.write(response.as_bytes()).unwrap();
-    }
-   
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
+    let content = std::fs::read_to_string(filename).unwrap();
+
+    let response = format!(
+        "{}\r\n\rContent-Length: {}\r\n\r\n{}",
+         response_status,
+         content.len(),
+         content
+    );
+    stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
     println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
    
